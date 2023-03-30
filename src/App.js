@@ -1,23 +1,73 @@
-import logo from './logo.svg';
-import './App.css';
+import { useEffect, useState } from "react";
+import { TVShowApi } from "./api/tv-show";
+import s from "./style.module.css";
+import { BACKDROP_BASE_URL } from "./config";
+import { TVShowDetail } from "./components/TVShowDetail/TVShowDetail";
+import { Logo } from "./components/Logo/Logo";
+import logoImg from "./assets/images/logo.png";
+import { TVShowList } from "./components/TVShowList/TVShowList";
 
 function App() {
+  const [currentTVShow, setCurrentTVShow] = useState();
+  const [recommendationList, setRecommendationList] = useState([]);
+
+  async function fetchPopulars() {
+    const popularTVShowList = await TVShowApi.fetchPopulars();
+    if (popularTVShowList.length > 0) {
+      setCurrentTVShow(popularTVShowList[0]);
+    }
+  }
+  async function fetchRecommendations(tvShowId) {
+    const recommendationListResp = await TVShowApi.fetchRecommendations(
+      tvShowId
+    );
+    if (recommendationListResp.length > 0) {
+      setRecommendationList(recommendationListResp.slice(0, 10));
+    }
+  }
+
+  useEffect(() => {
+    fetchPopulars();
+  }, []);
+
+  useEffect(() => {
+    if (currentTVShow) {
+      fetchRecommendations(currentTVShow.id);
+    }
+  }, [currentTVShow]);
+
+  // console.log(recommendationList);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div
+      className={s.main_container}
+      style={{
+        background: currentTVShow
+          ? `linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)),
+           url("${BACKDROP_BASE_URL}${currentTVShow.backdrop_path}") no-repeat center / cover`
+          : "black",
+      }}
+    >
+      <div className={s.header}>
+        <div className="row">
+          <div className="col-4">
+            <Logo
+              title="Watowatch"
+              subtitle="Find a show you may like"
+              image={logoImg}
+            />
+          </div>
+          <div className="col-md-12 col-lg-4">
+            <input style={{ width: "100%" }} type="text" />
+          </div>
+        </div>
+      </div>
+      <div className={s.tv_show_detail}>
+        {currentTVShow && <TVShowDetail tvShow={currentTVShow} />}
+      </div>
+      <div className={s.recommended_shows}>
+        {currentTVShow && <TVShowList tvShowList={recommendationList} />}
+      </div>
     </div>
   );
 }
